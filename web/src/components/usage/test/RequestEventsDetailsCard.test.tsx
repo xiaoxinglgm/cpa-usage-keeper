@@ -107,7 +107,7 @@ describe('RequestEventsDetailsCard', () => {
     expect(tableValues(html)).toMatchObject({
       Latency: '--TTFT 45ms',
       'Overall Speed': '-',
-      'Post-TTFT Speed (Est.)': '-',
+      'Token Speed': '-',
     });
   });
 

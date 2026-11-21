@@ -70,7 +70,7 @@ describe('RequestEventsDetailsCard compact columns', () => {
       'Request',
       'Latency',
       'Overall Speed',
-      'Post-TTFT Speed (Est.)',
+      'Token Speed',
       'Tokens',
       'Cache',
       'Cost',
