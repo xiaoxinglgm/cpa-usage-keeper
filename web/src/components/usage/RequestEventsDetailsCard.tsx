@@ -185,6 +185,7 @@ type RequestEventRow = {
   ttftLabel: string;
   speedTPS: number | null;
   speedLabel: string;
+  decodeSpeedLabel: string;
   clientIP: string;
   xForwardedFor: string;
   userAgent: string;
@@ -448,6 +449,19 @@ const formatSpeedTPS = (speedTPS: number | null): string => {
     return '-';
   }
   return `${speedTPS.toFixed(1)} t/s`;
+};
+
+const MIN_DECODE_DURATION_MS = 500;
+
+const estimateDecodeTPS = (event: UsageEvent, outputTokens: number): number | null => {
+  const { latency_ms: latency, ttft_ms: ttft } = event;
+  if (event.failed || event.stream !== true || outputTokens <= 0
+    || !Number.isFinite(latency) || typeof ttft !== 'number' || !Number.isFinite(ttft) || ttft <= 0) {
+    return null;
+  }
+
+  const duration = latency - ttft;
+  return duration >= MIN_DECODE_DURATION_MS ? outputTokens * 1000 / duration : null;
 };
 
 const truncateRequestEventMetadata = (value: string, maxLength: number): string => {
@@ -918,6 +932,7 @@ export function RequestEventsDetailsCard({
         ttftLabel: formatTTFTMs(ttftMs),
         speedTPS,
         speedLabel: formatSpeedTPS(speedTPS),
+        decodeSpeedLabel: formatSpeedTPS(estimateDecodeTPS(event, outputTokens)),
         clientIP,
         xForwardedFor,
         userAgent,
@@ -1210,9 +1225,15 @@ export function RequestEventsDetailsCard({
       },
       {
         id: 'speed',
-        label: t('usage_stats.speed'),
-        header: <th className={styles.requestEventsNoWrapCell} title={speedHint}>{t('usage_stats.speed')}</th>,
+        label: t('usage_stats.request_events_overall_speed'),
+        header: <th className={styles.requestEventsNoWrapCell} title={speedHint}>{t('usage_stats.request_events_overall_speed')}</th>,
         renderCell: (row) => <td className={`${styles.requestEventsNoWrapCell} ${styles.requestEventsPrimaryCell}`}>{row.speedLabel}</td>,
+      },
+      {
+        id: 'decode_speed',
+        label: t('usage_stats.request_events_decode_speed'),
+        header: <th className={styles.requestEventsNoWrapCell} title={t('usage_stats.request_events_decode_speed_hint', { minMs: MIN_DECODE_DURATION_MS })}>{t('usage_stats.request_events_decode_speed')}</th>,
+        renderCell: (row) => <td className={`${styles.requestEventsNoWrapCell} ${styles.requestEventsPrimaryCell}`}>{row.decodeSpeedLabel}</td>,
       },
       {
         id: 'total_tokens',

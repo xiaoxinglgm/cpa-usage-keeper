@@ -104,7 +104,11 @@ describe('RequestEventsDetailsCard', () => {
 
   it('keeps Latency and Speed visible when their values are missing', () => {
     const html = renderCard({ events: [{ ...events[0], latency_ms: undefined, speed_tps: undefined }] });
-    expect(tableValues(html)).toMatchObject({ Latency: '--TTFT 45ms', Speed: '-' });
+    expect(tableValues(html)).toMatchObject({
+      Latency: '--TTFT 45ms',
+      'Overall Speed': '-',
+      'Post-TTFT Speed (Est.)': '-',
+    });
   });
 
   it.each([

@@ -56,7 +56,7 @@ describe('RequestEventsDetailsCard compact columns', () => {
     expect(cells[9]).toBe('30.0 t/s')
   })
 
-  it('renders the agreed 17 display columns in order', () => {
+  it('renders the 18 display columns in order', () => {
     const html = renderCard()
 
     expect(extractTableHeaders(html)).toEqual([
@@ -69,7 +69,8 @@ describe('RequestEventsDetailsCard compact columns', () => {
       'Result',
       'Request',
       'Latency',
-      'Speed',
+      'Overall Speed',
+      'Post-TTFT Speed (Est.)',
       'Tokens',
       'Cache',
       'Cost',
@@ -80,27 +81,53 @@ describe('RequestEventsDetailsCard compact columns', () => {
     ])
   })
 
+  it('shows an estimate alongside the unchanged API speed for a valid stream', () => {
+    const cells = extractFirstTableRowCells(renderCard({
+      ...event, stream: true, latency_ms: 2000, ttft_ms: 800,
+    }))
+
+    expect(cells.slice(9, 11)).toEqual(['30.0 t/s', '50.0 t/s'])
+  })
+
+  it.each([
+    { ttft_ms: undefined },
+    { ttft_ms: 0 },
+    { ttft_ms: 2000 },
+    { ttft_ms: 1630 },
+    { stream: false },
+    { stream: null },
+    { failed: true },
+    { tokens: { ...event.tokens, output_tokens: 0 } },
+  ])('omits the estimate for an unreliable or inapplicable event: %j', (override) => {
+    const cells = extractFirstTableRowCells(renderCard({
+      ...event, stream: true, latency_ms: 2000, ttft_ms: 800, ...override,
+    }))
+
+    expect(cells[10]).toBe('-')
+  })
+
   it('stacks only the fields assigned to each compact column', () => {
     const html = renderCard()
     const cells = extractFirstTableRowCells(html)
 
-    expect(cells).toHaveLength(17)
+    expect(cells).toHaveLength(18)
     expect(cells[2]).toContain('OpenAI Team')
     expect(cells[2]).toContain('Deleted')
     expect(cells[2]).not.toContain('openai')
     expect(cells[3]).toBe('gpt-5.6keeper-gpt')
     expect(cells[4]).toBe('high')
     expect(cells[5]).toBe('Fast')
-    expect(cells.slice(7, 14)).toEqual([
+    expect(cells.slice(7, 15)).toEqual([
       'SSE/v1/messages',
       '120msTTFT 45ms',
       '30.0 t/s',
+      '-',
       '2001006020',
       '20.00%205',
       '$0.1234Claude Style',
       'OpenAIResponsesExecutor',
     ])
-    expect(cells.slice(14)).toEqual([
+    expect(cells.slice(15)).toEqual([
       '192.0.2.10',
       '203.0.113.5, 198.51.100.8',
       'keeper-client/1.0',
